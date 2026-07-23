@@ -1,147 +1,179 @@
 """
-Main FastAPI application.
-Includes router setup, CORS configuration, exception handlers, and middleware.
+Simple Markdown to PDF Converter API using FastAPI.
 """
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+import markdown2
+import pdfkit
+from io import BytesIO
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-
-from app.core.config import settings
-from app.core.logging import logger, setup_logging
-from app.utils.exceptions import MarkdownToPDFException
-from app.api.routes import convert, themes
-from app.models.schemas import ErrorResponse
-
-# Set up logging
-setup_logging()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for application startup and shutdown.
-    """
-    logger.info(f"Starting {settings.app_name} v{settings.app_version}")
-    yield
-    logger.info(f"Shutting down {settings.app_name}")
-
-
-# Create FastAPI application
 app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
-    description=(
-        "Convert Markdown to beautifully styled PDFs with customizable themes, "
-        "fonts, colors, and page settings."
-    ),
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
-)
-
-# Only add lifespan if not in a serverless environment that might choke on it
-# (Vercel typically handles this, but some environments have issues)
-# For now, we'll keep it simple to troubleshoot crashes.
-# app.router.lifespan_context = lifespan
-
-# Configure CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    title="Markdown to PDF Converter",
+    version="1.0.0",
+    description="Convert Markdown text or files to PDF easily.",
 )
 
 
-# Exception handlers
-@app.exception_handler(MarkdownToPDFException)
-async def markdown_to_pdf_exception_handler(
-    request: Request,
-    exc: MarkdownToPDFException
-) -> JSONResponse:
-    """Handle custom application exceptions."""
-    logger.error(f"Application error: {exc.error} - {exc.detail}")
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": exc.error,
-            "detail": exc.detail,
-            "status_code": exc.status_code,
-        },
-    )
+class MarkdownRequest(BaseModel):
+    markdown: str
 
 
-@app.exception_handler(Exception)
-async def general_exception_handler(
-    request: Request,
-    exc: Exception
-) -> JSONResponse:
-    """Handle unexpected exceptions."""
-    logger.error(f"Unexpected error: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "InternalServerError",
-            "detail": "An unexpected error occurred",
-            "status_code": 500,
-        },
-    )
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {"message": "Markdown to PDF Converter API", "version": "1.0.0"}
 
 
-# Include routers
-app.include_router(convert.router)
-app.include_router(themes.router)
-
-
-# Health check endpoint
 @app.get("/health")
-async def health_check() -> dict:
-    """
-    Health check endpoint.
-    
-    Returns:
-        Dictionary with status information
-    """
-    return {
-        "status": "healthy",
-        "app": settings.app_name,
-        "version": settings.app_version,
-    }
+async def health():
+    """Health check endpoint."""
+    return {"status": "healthy"}
 
 
-@app.get("/", tags=["info"])
-async def root() -> dict:
-    """
-    Root endpoint with API information.
-    
-    Returns:
-        Dictionary with API info and available endpoints
-    """
-    return {
-        "app": settings.app_name,
-        "version": settings.app_version,
-        "description": "Convert Markdown to PDF",
-        "endpoints": {
-            "health": "/health",
-            "docs": "/docs",
-            "redoc": "/redoc",
-            "convert_text": "POST /convert/text",
-            "convert_file": "POST /convert/file",
-            "list_themes": "GET /themes",
-            "theme_detail": "GET /themes/{theme_id}",
-        },
-    }
+@app.post("/convert/text")
+async def convert_text(request: MarkdownRequest):
+    """Convert markdown text to PDF."""
+    try:
+        # Convert markdown to HTML
+        html = markdown2.markdown(request.markdown)
+        
+        # Wrap in basic HTML template
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 20px;
+                    color: #333;
+                }}
+                h1, h2, h3 {{
+                    color: #0066cc;
+                }}
+                code {{
+                    background-color: #f4f4f4;
+                    padding: 2px 5px;
+                    border-radius: 3px;
+                }}
+                pre {{
+                    background-color: #f4f4f4;
+                    padding: 10px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                }}
+                a {{
+                    color: #0066cc;
+                    text-decoration: none;
+                }}
+                a:hover {{
+                    text-decoration: underline;
+                }}
+            </style>
+        </head>
+        <body>
+            {html}
+        </body>
+        </html>
+        """
+        
+        # Convert HTML to PDF
+        pdf_bytes = pdfkit.from_string(html_content, False, options={
+            'page-size': 'A4',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in',
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+        })
+        
+        # Return PDF as file download
+        return FileResponse(
+            BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=document.pdf"}
+        )
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+
+@app.post("/convert/file")
+async def convert_file(file: UploadFile = File(...)):
+    """Convert markdown file to PDF."""
+    try:
+        # Read file content
+        content = await file.read()
+        markdown_text = content.decode('utf-8')
+        
+        # Convert markdown to HTML
+        html = markdown2.markdown(markdown_text)
+        
+        # Wrap in basic HTML template
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 20px;
+                    color: #333;
+                }}
+                h1, h2, h3 {{
+                    color: #0066cc;
+                }}
+                code {{
+                    background-color: #f4f4f4;
+                    padding: 2px 5px;
+                    border-radius: 3px;
+                }}
+                pre {{
+                    background-color: #f4f4f4;
+                    padding: 10px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                }}
+                a {{
+                    color: #0066cc;
+                    text-decoration: none;
+                }}
+                a:hover {{
+                    text-decoration: underline;
+                }}
+            </style>
+        </head>
+        <body>
+            {html}
+        </body>
+        </html>
+        """
+        
+        # Convert HTML to PDF
+        pdf_bytes = pdfkit.from_string(html_content, False, options={
+            'page-size': 'A4',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in',
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+        })
+        
+        # Get filename without extension
+        filename = file.filename.rsplit('.', 1)[0] if file.filename else "document"
+        
+        # Return PDF as file download
+        return FileResponse(
+            BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}.pdf"}
+        )
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.debug,
-    )
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
