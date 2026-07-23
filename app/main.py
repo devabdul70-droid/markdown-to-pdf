@@ -1,11 +1,10 @@
 """
-Simple Markdown to PDF Converter API using FastAPI.
+Simple Markdown to PDF Converter API using FastAPI and fpdf2.
 """
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import markdown2
-import pdfkit
+from fpdf import FPDF
 from io import BytesIO
 
 app = FastAPI(
@@ -31,63 +30,52 @@ async def health():
     return {"status": "healthy"}
 
 
+def create_pdf_from_markdown(markdown_text: str, title: str = "Document") -> bytes:
+    """
+    Convert markdown text to PDF using fpdf2.
+    
+    Args:
+        markdown_text: Markdown content
+        title: PDF document title
+    
+    Returns:
+        PDF as bytes
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=12)
+    
+    # Set document title
+    pdf.set_title(title)
+    
+    # fpdf2 natively supports markdown syntax in multi_cell
+    # Markdown features: **bold**, __italic__, `code`, links, etc.
+    pdf.multi_cell(
+        w=190,
+        h=10,
+        text=markdown_text,
+        markdown=True,
+    )
+    
+    # Return PDF as bytes
+    pdf_bytes = BytesIO()
+    pdf.output(pdf_bytes)
+    pdf_bytes.seek(0)
+    return pdf_bytes.getvalue()
+
+
 @app.post("/convert/text")
 async def convert_text(request: MarkdownRequest):
     """Convert markdown text to PDF."""
     try:
-        # Convert markdown to HTML
-        html = markdown2.markdown(request.markdown)
+        if not request.markdown.strip():
+            return {"error": "Markdown text is empty"}, 400
         
-        # Wrap in basic HTML template
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body {{
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    margin: 20px;
-                    color: #333;
-                }}
-                h1, h2, h3 {{
-                    color: #0066cc;
-                }}
-                code {{
-                    background-color: #f4f4f4;
-                    padding: 2px 5px;
-                    border-radius: 3px;
-                }}
-                pre {{
-                    background-color: #f4f4f4;
-                    padding: 10px;
-                    border-radius: 5px;
-                    overflow-x: auto;
-                }}
-                a {{
-                    color: #0066cc;
-                    text-decoration: none;
-                }}
-                a:hover {{
-                    text-decoration: underline;
-                }}
-            </style>
-        </head>
-        <body>
-            {html}
-        </body>
-        </html>
-        """
-        
-        # Convert HTML to PDF
-        pdf_bytes = pdfkit.from_string(html_content, False, options={
-            'page-size': 'A4',
-            'margin-top': '0.75in',
-            'margin-right': '0.75in',
-            'margin-bottom': '0.75in',
-            'margin-left': '0.75in',
-        })
+        # Generate PDF
+        pdf_bytes = create_pdf_from_markdown(
+            request.markdown,
+            title="Document"
+        )
         
         # Return PDF as file download
         return FileResponse(
@@ -103,66 +91,25 @@ async def convert_text(request: MarkdownRequest):
 async def convert_file(file: UploadFile = File(...)):
     """Convert markdown file to PDF."""
     try:
+        # Validate file extension
+        if not file.filename.endswith(('.md', '.markdown')):
+            return {"error": "Only .md and .markdown files are supported"}, 415
+        
         # Read file content
         content = await file.read()
         markdown_text = content.decode('utf-8')
         
-        # Convert markdown to HTML
-        html = markdown2.markdown(markdown_text)
+        if not markdown_text.strip():
+            return {"error": "File is empty"}, 400
         
-        # Wrap in basic HTML template
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body {{
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    margin: 20px;
-                    color: #333;
-                }}
-                h1, h2, h3 {{
-                    color: #0066cc;
-                }}
-                code {{
-                    background-color: #f4f4f4;
-                    padding: 2px 5px;
-                    border-radius: 3px;
-                }}
-                pre {{
-                    background-color: #f4f4f4;
-                    padding: 10px;
-                    border-radius: 5px;
-                    overflow-x: auto;
-                }}
-                a {{
-                    color: #0066cc;
-                    text-decoration: none;
-                }}
-                a:hover {{
-                    text-decoration: underline;
-                }}
-            </style>
-        </head>
-        <body>
-            {html}
-        </body>
-        </html>
-        """
+        # Extract filename without extension for PDF title
+        filename = file.filename.rsplit('.', 1)[0]
         
-        # Convert HTML to PDF
-        pdf_bytes = pdfkit.from_string(html_content, False, options={
-            'page-size': 'A4',
-            'margin-top': '0.75in',
-            'margin-right': '0.75in',
-            'margin-bottom': '0.75in',
-            'margin-left': '0.75in',
-        })
-        
-        # Get filename without extension
-        filename = file.filename.rsplit('.', 1)[0] if file.filename else "document"
+        # Generate PDF
+        pdf_bytes = create_pdf_from_markdown(
+            markdown_text,
+            title=filename
+        )
         
         # Return PDF as file download
         return FileResponse(
@@ -170,6 +117,8 @@ async def convert_file(file: UploadFile = File(...)):
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename={filename}.pdf"}
         )
+    except UnicodeDecodeError:
+        return {"error": "File is not a valid UTF-8 text file"}, 400
     except Exception as e:
         return {"error": str(e)}, 500
 
