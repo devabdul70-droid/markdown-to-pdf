@@ -2,7 +2,7 @@
 Simple Markdown to PDF Converter API using FastAPI and fpdf2.
 """
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from fpdf import FPDF
 from io import BytesIO
@@ -105,8 +105,8 @@ async def convert_text(request: MarkdownRequest):
             title="Document"
         )
         
-        # Return PDF as file download
-        return FileResponse(
+        # Return PDF as stream download
+        return StreamingResponse(
             BytesIO(pdf_bytes),
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=document.pdf"}
@@ -139,8 +139,8 @@ async def convert_file(file: UploadFile = File(...)):
             title=filename
         )
         
-        # Return PDF as file download
-        return FileResponse(
+        # Return PDF as stream download
+        return StreamingResponse(
             BytesIO(pdf_bytes),
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename={filename}.pdf"}
