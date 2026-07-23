@@ -7,12 +7,5 @@
     "MAX_MARKDOWN_LENGTH": "500000",
     "ALLOWED_ORIGINS": "*",
     "PIP_NO_CACHE_DIR": "1"
-  },
-  "functions": {
-    "api/index.py": {
-      "runtime": "python@3.11",
-      "memory": 1024,
-      "maxDuration": 60
-    }
   }
 }
