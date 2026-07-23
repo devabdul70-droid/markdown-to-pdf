@@ -1,8 +1,6 @@
 {
   "buildCommand": "pip install --upgrade pip setuptools wheel && pip install -r requirements.txt",
   "installCommand": "pip install --upgrade pip setuptools wheel --no-cache-dir",
-  "framework": "python",
-  "python": "3.11",
   "env": {
     "DEBUG": "false",
     "MAX_FILE_SIZE": "5242880",
@@ -16,9 +14,5 @@
       "memory": 1024,
       "maxDuration": 60
     }
-  },
-  "buildCache": {
-    "files": ["requirements.txt", "runtime.txt"],
-    "maxAge": 3600
   }
 }
