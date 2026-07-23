@@ -36,11 +36,15 @@ app = FastAPI(
         "Convert Markdown to beautifully styled PDFs with customizable themes, "
         "fonts, colors, and page settings."
     ),
-    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+# Only add lifespan if not in a serverless environment that might choke on it
+# (Vercel typically handles this, but some environments have issues)
+# For now, we'll keep it simple to troubleshoot crashes.
+# app.router.lifespan_context = lifespan
 
 # Configure CORS middleware
 app.add_middleware(
