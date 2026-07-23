@@ -53,7 +53,7 @@ def create_pdf_from_markdown(markdown_text: str, title: str = "Document") -> byt
     pdf.multi_cell(
         w=190,
         h=10,
-        text=markdown_text,
+        txt=markdown_text,
         markdown=True,
     )
     
