@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  markdown-to-pdf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - MAX_FILE_SIZE=5242880
+      - MAX_MARKDOWN_LENGTH=500000
+      - ALLOWED_ORIGINS=*
+      - DEFAULT_PAGE_SIZE=A4
+      - DEFAULT_MARGIN=2cm
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # Optional: Add nginx reverse proxy
+  # nginx:
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - markdown-to-pdf

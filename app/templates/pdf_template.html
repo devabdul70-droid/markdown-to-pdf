@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        /* PDF document base styles */
+        @page {
+            size: {{ page_size }};
+            margin: {{ margin }};
+        }
+
+        /* Print stylesheet adjustments */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            img {
+                max-width: 100% !important;
+                page-break-inside: avoid;
+            }
+
+            pre {
+                page-break-inside: avoid;
+                word-wrap: break-word;
+            }
+
+            table {
+                page-break-inside: avoid;
+            }
+
+            h1, h2, h3, h4, h5, h6 {
+                page-break-after: avoid;
+                page-break-inside: avoid;
+            }
+
+            li {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Apply theme CSS */
+        {{ custom_css }}
+    </style>
+</head>
+<body>
+    {{ content }}
+</body>
+</html>

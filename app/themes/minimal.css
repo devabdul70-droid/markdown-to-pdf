@@ -1,0 +1,190 @@
+/*
+Minimal Theme - Minimalist design with lots of whitespace and clean typography
+*/
+
+:root {
+  --font-family: Helvetica, Arial, 'Segoe UI', sans-serif;
+  --font-size: 14pt;
+  --font-color: #000000;
+  --background-color: #ffffff;
+  --heading-color: #000000;
+  --code-bg: #efefef;
+  --link-color: #555555;
+  --border-color: #f0f0f0;
+  --accent-color: #555555;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  color: var(--font-color);
+  background-color: var(--background-color);
+  line-height: 1.8;
+  padding: 0;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--heading-color);
+  font-weight: 300;
+  margin-top: 2em;
+  margin-bottom: 1em;
+  line-height: 1.4;
+  letter-spacing: 1px;
+}
+
+h1 {
+  font-size: 2.5em;
+  border-bottom: none;
+  padding-bottom: 0.5em;
+  margin-bottom: 0.8em;
+}
+
+h2 {
+  font-size: 1.8em;
+  border-bottom: none;
+  padding-bottom: 0.3em;
+}
+
+h3 { font-size: 1.4em; }
+h4 { font-size: 1.2em; }
+h5 { font-size: 1.1em; }
+h6 { font-size: 1em; }
+
+/* Paragraphs */
+p {
+  margin: 1.5em 0;
+  letter-spacing: 0.3px;
+}
+
+/* Links */
+a {
+  color: var(--link-color);
+  text-decoration: none;
+  border-bottom: 1px solid var(--link-color);
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  border-bottom: 2px solid var(--link-color);
+}
+
+/* Code */
+code {
+  background-color: var(--code-bg);
+  padding: 0.3em 0.6em;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95em;
+  letter-spacing: 0;
+}
+
+pre {
+  background-color: var(--code-bg);
+  padding: 1.5em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 2em 0;
+  border-left: none;
+  line-height: 1.6;
+  font-size: 0.9em;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Lists */
+ul, ol {
+  margin: 1.5em 0;
+  padding-left: 3em;
+  line-height: 1.8;
+}
+
+li {
+  margin: 0.8em 0;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 2em 0;
+  border-spacing: 0;
+}
+
+table th,
+table td {
+  border: none;
+  padding: 1em 0.8em;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+table th {
+  background-color: transparent;
+  font-weight: 500;
+  border-bottom: 2px solid #000;
+  color: var(--heading-color);
+}
+
+table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: none;
+  padding: 0 0 0 2em;
+  margin: 2em 0;
+  background-color: transparent;
+  color: #888;
+  font-style: italic;
+  font-size: 1.05em;
+}
+
+blockquote p {
+  margin: 1em 0;
+}
+
+/* Horizontal rule */
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 3em 0;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 2em 0;
+  border: none;
+}
+
+/* Strong and emphasis */
+strong {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+em {
+  font-style: italic;
+}
+
+/* Inline code in headings */
+h1 code, h2 code, h3 code, h4 code, h5 code, h6 code {
+  background-color: transparent;
+  padding: 0;
+  font-weight: 400;
+}
