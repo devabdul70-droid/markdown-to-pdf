@@ -43,47 +43,60 @@ def create_pdf_from_markdown(markdown_text: str, title: str = "Document") -> byt
     """
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Helvetica", size=11)
     
     # Set document title
     pdf.set_title(title)
     
     # Add content with margins
     pdf.set_margins(10, 10, 10)
+    pdf.set_font("Helvetica", size=11)
     
     # Split content into lines and render
-    for line in markdown_text.split('\n'):
-        line = line.strip()
-        
-        # Skip empty lines
-        if not line:
+    lines = markdown_text.split('\n')
+    
+    for line in lines:
+        # Handle empty lines
+        if not line.strip():
             pdf.ln(5)
             continue
         
-        # Handle headings
+        # Handle heading levels
         if line.startswith('# '):
-            pdf.set_font("Helvetica", style="B", size=18)
-            pdf.cell(0, 10, line[2:].strip(), ln=True)
-            pdf.set_font("Helvetica", size=11)
-            pdf.ln(3)
-        elif line.startswith('## '):
-            pdf.set_font("Helvetica", style="B", size=14)
-            pdf.cell(0, 10, line[3:].strip(), ln=True)
+            pdf.set_font("Helvetica", style="B", size=20)
+            pdf.cell(0, 12, line[2:].strip(), ln=True)
             pdf.set_font("Helvetica", size=11)
             pdf.ln(2)
+        elif line.startswith('## '):
+            pdf.set_font("Helvetica", style="B", size=16)
+            pdf.cell(0, 11, line[3:].strip(), ln=True)
+            pdf.set_font("Helvetica", size=11)
+            pdf.ln(1)
         elif line.startswith('### '):
-            pdf.set_font("Helvetica", style="B", size=12)
+            pdf.set_font("Helvetica", style="B", size=13)
             pdf.cell(0, 10, line[4:].strip(), ln=True)
             pdf.set_font("Helvetica", size=11)
             pdf.ln(1)
-        # Handle bold and italic (simple replacement)
-        elif '**' in line or '__' in line:
-            # Simple approach: just remove markdown syntax and render
-            text = line.replace('**', '').replace('__', '').replace('`', '')
-            pdf.multi_cell(0, 7, text)
+        # Handle list items
+        elif line.strip().startswith('- ') or line.strip().startswith('* '):
+            bullet_text = line.strip()[2:].strip()
+            pdf.set_x(15)
+            pdf.cell(5, 7, '•', ln=False)
+            pdf.set_x(20)
+            pdf.multi_cell(0, 7, bullet_text)
+        # Handle code blocks (lines with backticks)
+        elif line.strip().startswith('```'):
+            continue  # Skip code fence markers
+        # Regular paragraph with inline formatting
         else:
-            # Regular paragraph
-            pdf.multi_cell(0, 7, line)
+            # Process inline markdown: **bold**, __italic__, `code`
+            text = line.strip()
+            
+            # Replace **bold** with bold marker
+            text = text.replace('**', '')
+            text = text.replace('__', '')
+            text = text.replace('`', '')
+            
+            pdf.multi_cell(0, 7, text)
     
     # Return PDF as bytes
     pdf_bytes = BytesIO()
