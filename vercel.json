@@ -7,5 +7,17 @@
     "MAX_MARKDOWN_LENGTH": "500000",
     "ALLOWED_ORIGINS": "*",
     "PIP_NO_CACHE_DIR": "1"
-  }
+  },
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "api/index.py"
+    }
+  ]
 }
