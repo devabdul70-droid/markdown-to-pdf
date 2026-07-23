@@ -1,0 +1,17 @@
+{
+  "buildCommand": "pip install -r requirements.txt",
+  "installCommand": "pip install --upgrade pip setuptools wheel && pip install -r requirements.txt",
+  "framework": "python",
+  "python": "3.11",
+  "env": {
+    "DEBUG": "@DEBUG",
+    "MAX_FILE_SIZE": "5242880",
+    "MAX_MARKDOWN_LENGTH": "500000",
+    "ALLOWED_ORIGINS": "@ALLOWED_ORIGINS"
+  },
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.11"
+    }
+  }
+}
